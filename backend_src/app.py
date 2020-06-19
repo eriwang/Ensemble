@@ -1,8 +1,10 @@
 import os
 
 from flask import Flask, jsonify, render_template, request
+from pydub import AudioSegment
 from werkzeug.utils import secure_filename
 
+_MERGED_TRACKS_FOLDER = './merged_tracks'
 _UPLOADED_TRACKS_FOLDER = './uploaded_tracks'
 app = Flask(__name__, static_folder='static_gen')
 
@@ -17,8 +19,7 @@ def upload_track():
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
 
-    _, ext = os.path.splitext(file.filename)
-    if ext != '.wav':
+    if not _is_file_allowed(file.filename):
         return jsonify({'error': f'Disallowed extension for filename {file.filename}'}), 400
 
     full_filepath = os.path.join(_UPLOADED_TRACKS_FOLDER, secure_filename(file.filename))
@@ -35,6 +36,34 @@ def upload_track():
 @app.route('/', methods=['GET'])
 def home():
     return render_template('index.html')
+
+
+def merge_files():
+    audio_segments = []
+    for f in os.listdir(_UPLOADED_TRACKS_FOLDER):
+        if not _is_file_allowed(f):
+            raise ValueError(f'Found unsupported file {f} in {_UPLOADED_TRACKS_FOLDER}')
+        audio_segments.append(AudioSegment.from_file(os.path.join(_UPLOADED_TRACKS_FOLDER, f)))
+
+    if len(audio_segments) == 0:
+        raise ValueError(f'Cannot merge, no files found in {_UPLOADED_TRACKS_FOLDER}')
+
+    # TODO: doesn't do any checking of length, maybe should take the longest
+    audio_segment = audio_segments.pop()
+    for a in audio_segments:
+        audio_segment = audio_segment.overlay(a)
+
+    if not os.path.exists(_MERGED_TRACKS_FOLDER):
+        os.makedirs(_MERGED_TRACKS_FOLDER)
+
+    full_filepath = os.path.join(_MERGED_TRACKS_FOLDER, 'merge.mp3')
+    # TODO: different types/ settings
+    audio_segment.export(full_filepath, format='mp3')
+
+
+def _is_file_allowed(filename):
+    _, ext = os.path.splitext(filename)
+    return ext in ('.wav', '.mp3')
 
 
 if __name__ == '__main__':
