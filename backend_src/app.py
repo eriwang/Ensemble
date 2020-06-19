@@ -33,12 +33,8 @@ def upload_track():
     return jsonify(success=True), 200
 
 
-@app.route('/', methods=['GET'])
-def home():
-    return render_template('index.html')
-
-
-def merge_files():
+@app.route('/merge', methods=['POST'])
+def merge_tracks():
     audio_segments = []
     for f in os.listdir(_UPLOADED_TRACKS_FOLDER):
         if not _is_file_allowed(f):
@@ -59,6 +55,13 @@ def merge_files():
     full_filepath = os.path.join(_MERGED_TRACKS_FOLDER, 'merge.mp3')
     # TODO: different types/ settings
     audio_segment.export(full_filepath, format='mp3')
+
+    return jsonify(success=True), 200
+
+
+@app.route('/', methods=['GET'])
+def home():
+    return render_template('index.html')
 
 
 def _is_file_allowed(filename):
