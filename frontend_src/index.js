@@ -1,6 +1,6 @@
-import { name } from './upload.js';
+import { test } from './upload.js';
 
-import $ from 'jqsuery';
+import $ from 'jquery';
 
 $(document).ajaxError((event, jqXHR, settings, exception) => {
     const errorText = `"${settings.type}" request to URL "${settings.url}" failed ` +
