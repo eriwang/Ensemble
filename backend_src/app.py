@@ -24,7 +24,7 @@ def upload_track():
 
     full_filepath = os.path.join(_UPLOADED_TRACKS_FOLDER, secure_filename(file.filename))
     if os.path.exists(full_filepath):
-        return jsonify({'error': f'Filename already exists'}), 400
+        return jsonify({'error': 'Filename already exists'}), 400
 
     if not os.path.exists(_UPLOADED_TRACKS_FOLDER):
         os.makedirs(_UPLOADED_TRACKS_FOLDER)

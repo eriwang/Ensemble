@@ -1,5 +1,3 @@
-import { test } from './upload.js';
-
 import $ from 'jquery';
 
 $(document).ajaxError((event, jqXHR, settings, exception) => {
