@@ -1,3 +1,5 @@
+import { test } from './upload.js';
+
 import $ from 'jquery';
 
 $(document).ajaxError((event, jqXHR, settings, exception) => {
@@ -11,6 +13,7 @@ $(document).ajaxError((event, jqXHR, settings, exception) => {
 });
 
 $(document).ready(() => {
+    name();
     $('#submit-button').click(submitAccomplishmentForm);
     $.get('/all_accomplishments').done(populateAccomplishments);
 });
