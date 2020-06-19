@@ -1,4 +1,4 @@
-*.db
+uploaded_tracks/
 
 backend_src/static_gen/
 node_modules/
