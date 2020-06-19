@@ -1,4 +1,6 @@
-import $ from 'jquery';
+import { name } from './upload.js';
+
+import $ from 'jqsuery';
 
 $(document).ajaxError((event, jqXHR, settings, exception) => {
     const errorText = `"${settings.type}" request to URL "${settings.url}" failed ` +
@@ -11,6 +13,7 @@ $(document).ajaxError((event, jqXHR, settings, exception) => {
 });
 
 $(document).ready(() => {
+    name();
     $('#submit-button').click(submitAccomplishmentForm);
     $.get('/all_accomplishments').done(populateAccomplishments);
 });
