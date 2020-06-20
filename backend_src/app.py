@@ -1,11 +1,11 @@
 import os
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, send_file
 from pydub import AudioSegment
 from werkzeug.utils import secure_filename
 
-_MERGED_TRACKS_FOLDER = './merged_tracks'
-_UPLOADED_TRACKS_FOLDER = './uploaded_tracks'
+_MERGED_TRACKS_FOLDER = os.path.join(os.getcwd(), 'merged_tracks')
+_UPLOADED_TRACKS_FOLDER = os.path.join(os.getcwd(), 'uploaded_tracks')
 app = Flask(__name__, static_folder='static_gen')
 
 
@@ -33,6 +33,7 @@ def upload_track():
     return jsonify(success=True), 200
 
 
+# TODO: caching
 @app.route('/merge', methods=['POST'])
 def merge_tracks():
     audio_segments = []
@@ -56,7 +57,8 @@ def merge_tracks():
     # TODO: different types/ settings
     audio_segment.export(full_filepath, format='mp3')
 
-    return jsonify(success=True), 200
+    return send_file(full_filepath, as_attachment=True)
+    # return jsonify(success=True), 200
 
 
 @app.route('/', methods=['GET'])

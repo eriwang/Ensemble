@@ -46,9 +46,13 @@ function mergeFiles()
     let mergeFilesButton = $('#merge-files');
     mergeFilesButton.prop('disabled', true);
     $.ajax('/merge', { 'method': 'POST' })
-        .done(() => {
+        .done((response, status, xhr) => {
             mergeFilesButton.prop('disabled', false);
             console.log('files merged successfully');
+            let blob = new Blob([response], { type: xhr.getResponseHeader('Content-Type') });
+            let downloadUrl = URL.createObjectURL(blob);
+            console.log(downloadUrl);
+            // window.location.href = downloadUrl;
         })
         .fail(() => {
             mergeFilesButton.prop('disabled', false);
