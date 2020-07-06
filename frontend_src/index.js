@@ -1,5 +1,3 @@
-import { test } from './upload.js';
-
 import $ from 'jquery';
 
 $(document).ajaxError((event, jqXHR, settings, exception) => {
@@ -13,42 +11,52 @@ $(document).ajaxError((event, jqXHR, settings, exception) => {
 });
 
 $(document).ready(() => {
-    name();
-    $('#submit-button').click(submitAccomplishmentForm);
-    $.get('/all_accomplishments').done(populateAccomplishments);
+    $('#file-upload').change(uploadFile);
+    $('#merge-files').click(mergeFiles);
 });
 
-function populateAccomplishments(data)
+function uploadFile()
 {
-    console.log(data);
-    for (let a of data['accomplishments'])
-    {
-        let htmlStr =   `<p data-id="${a['id']}">
-                            ${a['date']}: ${a['description']}, is_planned=${a['is_planned']}, status=${a['status']}
-                        </p>`;
-        $('#accomplishments').append(htmlStr);
-    }
+    console.log('uploading file');
+    let fileUploadInput = $('#file-upload');
+    fileUploadInput.prop('disabled', true);
+    let formData = new FormData();
+    formData.append('file', fileUploadInput[0].files[0]);
+
+    // TODO: clear the file from the input
+    $.ajax('/track', {
+        'data': formData,
+        'method': 'POST',
+        'processData': false,
+        'contentType': false
+    })
+        .done(() => {
+            fileUploadInput.prop('disabled', false);
+            console.log('upload complete');
+        })
+        .fail(() => {
+            fileUploadInput.prop('disabled', false);
+            console.error('upload failed');
+        });
 }
 
-function submitAccomplishmentForm()
+function mergeFiles()
 {
-    console.log('submitting');
-    let data = {};
-    for (let name_and_value of $('#add-accomplishment').serializeArray())
-    {
-        data[name_and_value['name']] = name_and_value['value'];
-    }
-
-    data['is_planned'] = (data['is_planned'] === 'true');
-    data['status'] = parseInt(data['status']);
-    console.log(data);
-    $.ajax('/accomplishment', {  // TODO: abstract this out. this is ridiculous to get right
-        'contentType': 'application/json',
-        'data': JSON.stringify(data),
-        'method': 'POST',
-        'processData': false
-    }).done(() => {
-        console.log('done');
-        $.get('/all_accomplishments').done(populateAccomplishments);
-    });
+    console.log('merge files');
+    let mergeFilesButton = $('#merge-files');
+    mergeFilesButton.prop('disabled', true);
+    $.ajax('/merge', { 'method': 'POST' })
+        .done((response) => {
+            mergeFilesButton.prop('disabled', false);
+            console.log('files merged successfully');
+            let searchParams = new URLSearchParams();
+            searchParams.set('is_merged', true);
+            searchParams.set('filename', response.filename);
+            
+            window.location.href = `/download?${searchParams.toString()}`;
+        })
+        .fail(() => {
+            mergeFilesButton.prop('disabled', false);
+            console.error('file merge failed');
+        });
 }

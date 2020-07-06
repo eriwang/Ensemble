@@ -1,8 +1,11 @@
+# Test Application Directories
 merged_tracks/
 uploaded_tracks/
 
+# Dev Directories
 backend_src/static_gen/
 node_modules/
 __pycache__/
 venv/
 .idea/
+.vscode/
