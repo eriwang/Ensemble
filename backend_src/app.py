@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask, jsonify, render_template, request, send_file
+from flask import Flask, abort, jsonify, render_template, request, send_file
 from pydub import AudioSegment
 from werkzeug.utils import secure_filename
 
@@ -53,12 +53,25 @@ def merge_tracks():
     if not os.path.exists(_MERGED_TRACKS_FOLDER):
         os.makedirs(_MERGED_TRACKS_FOLDER)
 
-    full_filepath = os.path.join(_MERGED_TRACKS_FOLDER, 'merge.mp3')
+    filename = 'merge.mp3'
+    full_filepath = os.path.join(_MERGED_TRACKS_FOLDER, filename)
     # TODO: different types/ settings
     audio_segment.export(full_filepath, format='mp3')
 
-    return send_file(full_filepath, as_attachment=True)
-    # return jsonify(success=True), 200
+    return jsonify({'filename': filename}), 200
+
+    # return send_file(full_filepath, as_attachment=True)
+
+
+# TODO: rethink what exactly this looks like with file previews and whatnot. Static instead?
+@app.route('/download', methods=['GET'])
+def download_track():
+    file_directory = _MERGED_TRACKS_FOLDER if request.args['is_merged'] == 'true' else _UPLOADED_TRACKS_FOLDER
+    full_filename = os.path.join(file_directory, request.args['filename'])
+    if not os.path.exists(full_filename):
+        abort(404)
+
+    return send_file(full_filename, as_attachment=True)
 
 
 @app.route('/', methods=['GET'])
