@@ -1,94 +1,19 @@
 import os
 
-from flask import Flask, abort, jsonify, render_template, request, send_file
-from pydub import AudioSegment
-from werkzeug.utils import secure_filename
+from flask import Flask, render_template
 
-import api.api_utils as au
+from api.track_api import track_bp
 
 _MERGED_TRACKS_FOLDER = os.path.join(os.getcwd(), 'merged_tracks')
 _UPLOADED_TRACKS_FOLDER = os.path.join(os.getcwd(), 'uploaded_tracks')
+
 app = Flask(__name__, static_folder='static_gen')
-
-
-@app.route('/track', methods=['POST'])
-@au.api_jsonify_errors
-def upload_track():
-    file = au.validate_and_load_params(request.files, {'file': str})['file']
-    filename = file.filename
-
-    if filename == '':
-        raise au.BadRequestException('No selected file')
-
-    if not _is_file_allowed(filename):
-        raise au.BadRequestException(f'Disallowed extension for filename {filename}')
-
-    full_filepath = os.path.join(_UPLOADED_TRACKS_FOLDER, secure_filename(filename))
-    if os.path.exists(full_filepath):
-        raise au.BadRequestException(f'Filename {filename} already exists')
-
-    if not os.path.exists(_UPLOADED_TRACKS_FOLDER):
-        os.makedirs(_UPLOADED_TRACKS_FOLDER)
-
-    file.save(full_filepath)
-    return jsonify(success=True), 200
-
-
-# TODO: caching
-@app.route('/merge', methods=['POST'])
-def merge_tracks():
-    audio_segments = []
-    for f in os.listdir(_UPLOADED_TRACKS_FOLDER):
-        if not _is_file_allowed(f):
-            raise ValueError(f'Found unsupported file {f} in {_UPLOADED_TRACKS_FOLDER}')
-        audio_segments.append(AudioSegment.from_file(os.path.join(_UPLOADED_TRACKS_FOLDER, f)))
-
-    if len(audio_segments) == 0:
-        raise ValueError(f'Cannot merge, no files found in {_UPLOADED_TRACKS_FOLDER}')
-
-    # TODO: doesn't do any checking of length, maybe should take the longest
-    audio_segment = audio_segments.pop()
-    for a in audio_segments:
-        audio_segment = audio_segment.overlay(a)
-
-    if not os.path.exists(_MERGED_TRACKS_FOLDER):
-        os.makedirs(_MERGED_TRACKS_FOLDER)
-
-    filename = 'merge.mp3'
-    full_filepath = os.path.join(_MERGED_TRACKS_FOLDER, filename)
-    # TODO: different types/ settings
-    audio_segment.export(full_filepath, format='mp3')
-
-    return jsonify({'filename': filename}), 200
-
-
-# TODO: rethink what exactly this looks like with file previews and whatnot. Static instead?
-@app.route('/download', methods=['GET'])
-@au.api_jsonify_errors
-def download_track():
-    _PARAM_KEY_TO_REQUIRED_VALUE_TYPES = {
-        'is_merged': 'boolstr',
-        'filename': str
-    }
-
-    params = au.validate_and_load_params(request.args, _PARAM_KEY_TO_REQUIRED_VALUE_TYPES)
-
-    file_directory = _MERGED_TRACKS_FOLDER if params['is_merged'] else _UPLOADED_TRACKS_FOLDER
-    full_filename = os.path.join(file_directory, params['filename'])
-    if not os.path.exists(full_filename):
-        abort(404)
-
-    return send_file(full_filename, as_attachment=True)
+app.register_blueprint(track_bp)
 
 
 @app.route('/', methods=['GET'])
 def home():
     return render_template('index.html')
-
-
-def _is_file_allowed(filename):
-    _, ext = os.path.splitext(filename)
-    return ext in ('.wav', '.mp3')
 
 
 if __name__ == '__main__':
