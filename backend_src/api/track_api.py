@@ -15,7 +15,10 @@ track_bp = Blueprint('track', __name__)
 @track_bp.route('/track', methods=['POST'])
 @au.api_jsonify_errors
 def upload_track():
-    file = au.validate_and_load_params(request.files, {'file': str})['file']
+    if 'file' not in request.files:
+        raise au.BadRequestException('Expected "file" parameter in form data')
+
+    file = request.files['file']
     filename = file.filename
 
     if filename == '':
